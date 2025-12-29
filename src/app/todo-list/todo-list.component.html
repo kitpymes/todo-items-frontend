@@ -1,0 +1,51 @@
+<div class="app-wrapper">
+  <h2>📊 Proyecto: {{ store.totalProgress() }}% completado</h2>
+
+  <!-- Caja de añadir existente -->
+  <div class="add-box">
+    <input #taskInput type="text" placeholder="Nueva tarea estratégica...">
+    <button (click)="store.add(taskInput.value); taskInput.value=''">Añadir</button>
+  </div>
+
+  <div class="items-grid">
+    @for (item of store.items(); track item.id) {
+      <div class="card" [class.is-complete]="item.progress === 100">
+
+        <div class="card-header">
+          <div class="title-row">
+            <h3 class="static-title" [class.completed]="item.progress === 100">
+              {{ item.title }}
+            </h3>
+
+
+            <div class="progress-badge" [style.background-color]="getProgressColor(item.progress)">
+              {{ item.progress }}%
+            </div>
+          </div>
+
+          <!-- DESCRIPCIÓN EDITABLE -->
+          <div class="description-container">
+            <textarea class="desc-input"
+                      placeholder="Añadir una descripción detallada..."
+                      #dInput (blur)="updateDescription(item.id, dInput.value)"
+                      (input)="adjustHeight($event)">{{ item.description }}</textarea>
+          </div>
+
+          <small class="date-tag">{{ item.date | date:'mediumDate' }}</small>
+        </div>
+
+        <div class="card-body">
+          <div class="range-container">
+            <input type="range" [value]="item.progress"
+                   (input)="onProgressChange(item.id, $event)"
+                   [style.background]="'linear-gradient(to right, #6366f1 ' + item.progress + '%, #e2e8f0 ' + item.progress + '%)'">
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <button (click)="store.remove(item.id)" class="btn-delete">Eliminar</button>
+        </div>
+      </div>
+    }
+  </div>
+</div>
