@@ -1,0 +1,26 @@
+.toast-popup {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 10000; /* Aseguramos que esté por encima de los modales */
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 1rem 1.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  border-left: 5px solid #ccc;
+  animation: slideIn 0.3s ease-out;
+
+  &.success { border-left-color: #10b981; }
+  &.error { border-left-color: #ef4444; }
+  &.info { border-left-color: #3b82f6; }
+
+  p { margin: 0; font-weight: 500; font-size: 0.9rem; }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}

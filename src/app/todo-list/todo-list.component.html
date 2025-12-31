@@ -1,51 +1,278 @@
-<div class="app-wrapper">
-  <h2>📊 Proyecto: {{ store.totalProgress() }}% completado</h2>
+<div class="app-container">
+  <!-- BARRA LATERAL (SIDEBAR) -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="title-group">
+        <h2>Proyectos</h2>
+        <!-- Botón de Recarga Profesional -->
+        <button class="btn-refresh" (click)="store.loadAllTodoList()" [disabled]="store.loading()"
+          title="Sincronizar con el servidor">
+          <span [class.spinning]="store.loading()">🔄</span>
+        </button>
+      </div>
+      <button class="btn btn-primary" (click)="startCreationTodoList()">+ Nuevo</button>
+    </div>
 
-  <!-- Caja de añadir existente -->
-  <div class="add-box">
-    <input #taskInput type="text" placeholder="Nueva tarea estratégica...">
-    <button (click)="store.add(taskInput.value); taskInput.value=''">Añadir</button>
-  </div>
+    <div class="project-list">
+      @for (p of store.projects(); track p.id) {
+      <div class="project-card" [class.active]="store.selectedId() === p.id"
+        (click)="[store.selectProject(p.id), isTodoListCreating.set(false)]">
+        <h3>{{ p.title }}</h3>
+        <p>{{ p.description || 'Sin descripción adicional' }}</p>
+      </div>
+      } @empty {
+      <div class="sidebar-empty">
+        <p>No tienes proyectos activos</p>
+      </div>
+      }
+    </div>
+  </aside>
 
-  <div class="items-grid">
-    @for (item of store.items(); track item.id) {
-      <div class="card" [class.is-complete]="item.progress === 100">
+  <!-- PANEL PRINCIPAL DE CONTENIDO -->
+  <main class="main-content">
 
-        <div class="card-header">
-          <div class="title-row">
-            <h3 class="static-title" [class.completed]="item.progress === 100">
-              {{ item.title }}
-            </h3>
+    <!-- NIVEL 1: ¿ESTAMOS CREANDO UN PROYECTO NUEVO? -->
+    @if (isTodoListCreating()) {
+    <section class="creation-ui animation-fade">
+      <header class="detail-header">
+        <span class="badge-new">NUEVO ESPACIO</span>
+        <h1>Configurar Proyecto</h1>
+        <p>Define los detalles básicos para comenzar a organizar tus tareas.</p>
+      </header>
+
+      <div class="form-container-pro">
+        <div class="form-group">
+          <label>Título del Proyecto</label>
+          <input [(ngModel)]="newTodoListBuffer.title" placeholder="Ej: Lanzamiento Web 2025" class="large-input">
+        </div>
+
+        <div class="form-group">
+          <label>Descripción</label>
+          <textarea [(ngModel)]="newTodoListBuffer.description" placeholder="Objetivos del proyecto..."
+            rows="4"></textarea>
+        </div>
+
+        <div class="creation-actions">
+          <button class="btn btn-primary" (click)="confirmCreationTodoList()">Crear Proyecto</button>
+          <button class="btn btn-outline" (click)="isTodoListCreating.set(false)">Cancelar</button>
+        </div>
+      </div>
+    </section>
+    }
+    @else {
+    <!-- NIVEL 2: SI NO CREAMOS, ¿HAY UN PROYECTO SELECCIONADO? -->
+    <!-- Usamos @if independiente aquí para evitar el error NG5002 con el "as" -->
+    @if (store.selectedProject(); as selected) {
+
+    <header class="detail-header">
+      @if (editingTodoListId() === selected.id) {
+      <!-- MODO EDICIÓN DEL PROYECTO -->
+      <div class="edit-project-form animation-fade">
+        <div class="form-group">
+          <label>Título del Proyecto</label>
+          <input [(ngModel)]="editTodoListBuffer.title" class="edit-input-h1" placeholder="Nombre del proyecto...">
+        </div>
+
+        <div class="form-group">
+          <label>Descripción detallada</label>
+          <textarea [(ngModel)]="editTodoListBuffer.description" rows="3"
+            placeholder="Añade una descripción sobre los objetivos..."></textarea>
+        </div>
+
+        <div class="header-actions">
+          <button class="btn btn-primary" (click)="confirmEditTodoList(selected.id)">
+            <span>💾</span> Guardar Cambios
+          </button>
+          <button class="btn btn-outline" (click)="cancelEdit()">
+            Cancelar
+          </button>
+        </div>
+      </div>
+      } @else {
+      <!-- MODO LECTURA DEL PROYECTO -->
+      <div class="display-project-info">
+        <div class="title-with-action">
+          <h1>{{ selected.title }}</h1>
+          <button class="btn-icon-edit" (click)="startEditTodoList(selected)" title="Editar información del proyecto">
+            ✏️
+          </button>
+        </div>
+        <p class="project-desc">{{ selected.description || 'Sin descripción disponible para este proyecto.' }}</p>
+      </div>
+      }
+    </header>
+
+    <div class="section-title-bar">
+      <h3>Tareas del Proyecto</h3>
+      <button class="btn btn-success" (click)="startCreationTodoItem()" [disabled]="isTodoItemCreating()">
+        + Añadir Tarea
+      </button>
+    </div>
 
 
-            <div class="progress-badge" [style.background-color]="getProgressColor(item.progress)">
-              {{ item.progress }}%
+    <div class="task-grid">
+
+      <!-- FORMULARIO DE NUEVA TAREA (Se muestra solo si isAddingTask es true) -->
+      @if (isTodoItemCreating()) {
+      <!-- TELÓN DE FONDO (Cierra el modal al hacer clic fuera si se desea) -->
+      <div class="modal-backdrop animation-fade" (click)="cancelEdit()">
+
+        <!-- CONTENEDOR DEL FORMULARIO (stopPropagation evita que el clic dentro cierre el modal) -->
+        <div class="modal-content-pro" (click)="$event.stopPropagation()">
+          <header class="modal-header">
+            <div class="header-icon">📝</div>
+            <div>
+              <h2>Nueva Tarea</h2>
+              <p>Asignar una nueva actividad al proyecto actual</p>
+            </div>
+          </header>
+
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Título de la tarea</label>
+              <input [(ngModel)]="newTodoItemBuffer.title" placeholder="Ej: Revisar documentación técnica" autofocus
+                class="pro-input">
+            </div>
+
+            <div class="form-group">
+              <label>Categoría</label>
+              <select [(ngModel)]="newTodoItemBuffer.category" class="pro-select">
+                <option value="Normal">Normal</option>
+                <option value="Urgente">Urgente</option>
+                <option value="Baja">Baja</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Descripción / Notas</label>
+              <textarea [(ngModel)]="newTodoItemBuffer.description" placeholder="Detalles adicionales sobre la tarea..."
+                rows="4"></textarea>
             </div>
           </div>
 
-          <!-- DESCRIPCIÓN EDITABLE -->
-          <div class="description-container">
-            <textarea class="desc-input"
-                      placeholder="Añadir una descripción detallada..."
-                      #dInput (blur)="updateDescription(item.id, dInput.value)"
-                      (input)="adjustHeight($event)">{{ item.description }}</textarea>
-          </div>
-
-          <small class="date-tag">{{ item.date | date:'mediumDate' }}</small>
-        </div>
-
-        <div class="card-body">
-          <div class="range-container">
-            <input type="range" [value]="item.progress"
-                   (input)="onProgressChange(item.id, $event)"
-                   [style.background]="'linear-gradient(to right, #6366f1 ' + item.progress + '%, #e2e8f0 ' + item.progress + '%)'">
-          </div>
-        </div>
-
-        <div class="card-footer">
-          <button (click)="store.remove(item.id)" class="btn-delete">Eliminar</button>
+          <footer class="modal-footer">
+            <button class="btn btn-outline" (click)="cancelEdit()">Cancelar</button>
+            <!-- Pasamos el ID del proyecto seleccionado desde la Store -->
+            <button class="btn btn-primary" [disabled]="!newTodoItemBuffer.title.trim()"
+              (click)="confirmCreationTodoItem(store.selectedId()!)">
+              Crear Tarea
+            </button>
+          </footer>
         </div>
       </div>
+      }
+
+      <!-- LISTADO DE TAREAS EXISTENTES -->
+      @for (item of store.selectedProject()?.items; track item.id) {
+      <article class="task-card">
+        @if (editingTodoItemId() === item.id) {
+
+        <div class="task-edit-mode animation-fade">
+          <div class="edit-fields">
+            <div class="field-group">
+              <label>Título de la tarea</label>
+              <input [(ngModel)]="editTodoItemBuffer.title" placeholder="Ej: Finalizar reporte...">
+            </div>
+
+            <div class="field-group">
+              <label>Notas adicionales</label>
+              <textarea [(ngModel)]="editTodoItemBuffer.description" rows="2"></textarea>
+            </div>
+          </div>
+
+          <div class="task-edit-actions">
+            <button class="btn-save-task" (click)="confirmEditTodoItem(store.selectedId()!, item.id)"
+              [disabled]="!editTodoItemBuffer.title.trim()">
+              <span class="icon">💾</span> Guardar
+            </button>
+            <button class="btn-cancel-task" (click)="cancelEdit()">
+              Cancelar
+            </button>
+          </div>
+        </div>
+
+        } @else {
+        <!-- MODO VISTA (Ya implementado anteriormente) -->
+        <div class="task-content">
+          <span class="category-badge">{{ item.category }}</span>
+          <h4>{{ item.title }}</h4>
+          <p>{{ item.description }}</p>
+          <div class="task-progression-area">
+            @let stats = getLatestProgress(item.progression);
+            @let remaining = 100 - (stats?.percent || 0);
+            @let isCompleted = remaining === 0;
+
+            @if (stats) {
+            <div class="progress-meta">
+              <span class="label">Progreso Total</span>
+              <span class="value">{{ stats.percent || 0 }}%</span>
+            </div>
+
+            <div class="progress-track">
+              <div class="progress-fill" [style.width.%]="stats.percent || 0" [class.is-complete]="isCompleted">
+              </div>
+            </div>
+
+            <div class="progress-footer">
+              <small>Sincronizado: {{ stats.date | date:'dd/MM HH:mm:ss' }}</small>
+            </div>
+
+            @if (!isCompleted){
+            <div class="add-progress-inline" [class.is-done]="isCompleted">
+              <input type="number" #newPct (input)="validateHitoInput($event, item)" placeholder="+ %" [max]="remaining"
+                [min]="1" [disabled]="isCompleted" class="hitos-input" title="Máximo permitido: {{ remaining }}%">
+
+              <button class="btn-mini-add" [class.is-completed]="isCompleted"
+                [disabled]="isCompleted || !newPct.value || newPct.value === '0'"
+                (click)="createProgressionTodoItem(selected.id, item.id, newPct.value, newPct)">
+                <span>{{ isCompleted ? 'Completada' : 'Sumar' }}</span>
+              </button>
+
+            </div>
+            }
+
+
+            @if (isCompleted) {
+            <small class="completion-msg">✨ Tarea finalizada con éxito</small>
+            }
+            } @else {
+            <div class="progress-empty">Sin hitos registrados</div>
+            }
+          </div>
+        </div>
+
+        <div class="task-footer">
+          <div class="actions-container">
+            <button class="btn-action edit" (click)="startEditTodoItem(item)" title="Modificar tarea"  [disabled]="remaining <= 50">
+              <span class="btn-icon">✏️</span>
+              <span class="btn-text">Editar</span>
+            </button>
+
+            <button class="btn-action delete" [disabled]="remaining <= 50"
+              (click)="store.deleteTodoItem({ todoListId: store.selectedId()!, todoItemId: item.id })"
+              title="Eliminar tarea">
+              <span class="btn-icon">🗑️</span>
+              <span class="btn-text">Eliminar</span>
+            </button>
+          </div>
+        </div>
+        }
+      </article>
+      }
+    </div>
     }
-  </div>
+    @else {
+    <!-- NIVEL 3: ESTADO INICIAL (NADA SELECCIONADO) -->
+    <div class="empty-state-container">
+      <h2>Bienvenido al Gestor 2025</h2>
+      @if(store.projects().length > 0) {
+      <h2>No hay proyecto seleccionado</h2>
+      <p>Selecciona un proyecto de la izquierda.</p>
+      } @else {
+      <button class="btn btn-outline" (click)="startCreationTodoList()">Crear mi primer proyecto</button>
+      }
+    </div>
+    }
+    }
+  </main>
 </div>

@@ -1,8 +1,7 @@
-// src/app/services/todo-api.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { map, max, Observable, of } from 'rxjs';
-import { TodoItem } from './todo-item/todo-item.model';
+import { Observable } from 'rxjs';
+import { CreateTodoListRequest, AppResult, UpdateTodoListRequest, CreateTodoItemRequest, UpdateTodoItemRequest, TodoList, CreateProgressionRequest } from './todo-list.model';
 import { AppConfigService } from '../app.config.service';
 
 @Injectable({ providedIn: 'root' })
@@ -11,49 +10,24 @@ export class TodoListService {
   private http = inject(HttpClient);
   private readonly API_URL = `${this.configService.apiUrl}/v1/todo-list`;
 
-  getLatsDate(progressions: { date: Date, percent: number }[]) {
-    const dates = progressions.map(p => new Date(p.date).getTime());
-    const maxTimestamp = Math.max(...dates);
-    const latestDateObject = new Date(maxTimestamp);
+  getAllTodoList = (): Observable<AppResult<TodoList[]>> =>
+    this.http.get<AppResult<TodoList[]>>(this.API_URL);
 
-    return latestDateObject;
-  };
+  createTodoList = (request: CreateTodoListRequest): Observable<AppResult<string>> =>
+    this.http.post<AppResult<string>>(this.API_URL, request);
 
-  getItems(): Observable<TodoItem[]> {
-    return this.http.get<any>(this.API_URL).pipe(
-      map((response: {
-        isSuccess: boolean,
-        message: string,
-        data: {
-          id: string, items: any[]
-        }[]
-      }) => {
+  updateTodoList = (todoListId: string, request: Partial<UpdateTodoListRequest>): Observable<AppResult> =>
+    this.http.put<AppResult>(`${this.API_URL}/${todoListId}`, request);
 
-        return response.data[0].items.map((item: any) => {
-          const latestDateObj = this.getLatsDate(item.progressions);
-          return {
-            id: item.id,
-            title: item.title,
-            description: item.description,
-            category: item.category?.name || 'Sin categoría',
-            date: latestDateObj ? latestDateObj.toISOString() : new Date().toISOString(),
-            progress: item.totalProgress,
-            completed: item.isCompleted
-          } as TodoItem;
-        });
-      })
-    );
-  };
+  createTodoItem = (todoListId: string, request: CreateTodoItemRequest): Observable<AppResult<number>> =>
+    this.http.post<AppResult<number>>(`${this.API_URL}/${todoListId}/item`, request);
 
-  createItem(body: Partial<TodoItem>): Observable<TodoItem> {
-    return this.http.post<TodoItem>(this.API_URL, body);
-  }
+  updateTodoItem = (todoListId: string, itemId: number, request: UpdateTodoItemRequest): Observable<AppResult> =>
+    this.http.put<AppResult>(`${this.API_URL}/${todoListId}/item/${itemId}`, request);
 
-  updateItem(id: number, body: Partial<TodoItem>): Observable<TodoItem> {
-    return this.http.patch<TodoItem>(`${this.API_URL}/${id}`, body);
-  }
+  deleteTodoItem = (todoListId: string, itemId: number): Observable<AppResult> =>
+    this.http.delete<AppResult>(`${this.API_URL}/${todoListId}/item/${itemId}`);
 
-  deleteItem(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.API_URL}/${id}`);
-  }
+  createProgressionTodoItem = (todoListId: string, itemId: number, request: CreateProgressionRequest): Observable<AppResult> =>
+    this.http.post<AppResult>(`${this.API_URL}/${todoListId}/item/${itemId}/progression`, request);
 }

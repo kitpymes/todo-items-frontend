@@ -1,26 +1,160 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 :root {
-  --primary-color: #4f46e5;      // Indigo 600
-  --primary-hover: #4338ca;
-  --bg-app: #f8fafc;             // Slate 50
-  --card-bg: #ffffff;
-  --text-main: #1e293b;          // Slate 800
-  --text-muted: #64748b;         // Slate 500
-  --border-color: #e2e8f0;       // Slate 200
-  --success: #10b981;
-  --danger: #ef4444;
-  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --radius: 12px;
+  /* Paleta de Colores SaaS Moderno */
+  --primary: #0f172a;        /* Slate 900 */
+  --primary-light: #334155;  /* Slate 700 */
+  --accent: #2563eb;         /* Blue 600 */
+  --success: #10b981;        /* Emerald 500 */
+  --danger: #ef4444;         /* Red 500 */
+  --background: #ffffff;
+  --surface: #f8fafc;        /* Slate 50 */
+  --border: #e2e8f0;         /* Slate 200 */
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+
+  /* Sombras Suaves */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+
+  --radius: 10px;
 }
 
 body {
-  background-color: var(--bg-app);
+  font-family: 'Inter', sans-serif;
+  background-color: var(--background);
   color: var(--text-main);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   margin: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
+/* Botones con Micro-interacciones */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+  gap: 6px;
 
+  &:active { transform: scale(0.97); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  &:hover { background: var(--primary-light); box-shadow: var(--shadow-md); }
+}
+
+.btn-outline {
+  background: white;
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  &:hover { background: var(--surface); border-color: var(--text-muted); }
+}
+
+.btn-success {
+  background: var(--success);
+  color: white;
+  &:hover { filter: brightness(1.05); box-shadow: 0 0 15px rgba(16, 185, 129, 0.2); }
+}
+
+.btn-ghost-danger {
+  background: transparent;
+  color: var(--danger);
+  &:hover { background: #fef2f2; }
+}
+
+/* Scrollbars Elegantes */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.4); // Slate 900 con transparencia
+  backdrop-filter: blur(8px); // Efecto de desenfoque moderno
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999; // Por encima de todo
+  padding: 20px;
+}
+
+/* Tarjeta del Modal */
+.modal-content-pro {
+  background: white;
+  width: 100%;
+  max-width: 500px;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid var(--border);
+
+  .modal-header {
+    padding: 1.5rem 2rem;
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border);
+
+    .header-icon {
+      font-size: 2rem;
+      background: white;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    h2 { font-size: 1.25rem; margin: 0; }
+    p { font-size: 0.85rem; color: var(--text-muted); margin: 4px 0 0 0; }
+  }
+
+  .modal-body {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .modal-footer {
+    padding: 1.5rem 2rem;
+    background: var(--surface);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    border-top: 1px solid var(--border);
+  }
+}
+
+/* Animaciones */
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animation-fade {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
